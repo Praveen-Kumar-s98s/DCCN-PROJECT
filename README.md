@@ -34,14 +34,14 @@ A modern Android application for emergency communication and peer-to-peer messag
 ## 📦 Installation
 
 ### Option 1: Download APK
-1. Download the latest APK from the [Releases](https://github.com/yourusername/dccn-connect/releases) page
+1. Download the latest APK from the [Releases](https://github.com/Praveen-Kumar-s98s/DCCN-PROJECT/releases) page
 2. Enable "Install from Unknown Sources" in your Android settings
 3. Install the APK file
 
 ### Option 2: Build from Source
 ```bash
-git clone https://github.com/yourusername/dccn-connect.git
-cd dccn-connect
+git clone https://github.com/Praveen-Kumar-s98s/DCCN-PROJECT.git
+cd DCCN-PROJECT
 ./gradlew assembleDebug
 ```
 
@@ -106,7 +106,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 For support and questions:
 - Create an issue on GitHub
 - Email: your.email@example.com
-- Project: [DCCN Connect GitHub](https://github.com/yourusername/dccn-connect)
+- Project: [DCCN Connect GitHub](https://github.com/Praveen-Kumar-s98s/DCCN-PROJECT)
 
 ---
 
