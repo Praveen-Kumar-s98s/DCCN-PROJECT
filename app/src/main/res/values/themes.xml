@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <!-- Base application theme for DCCN Connect -->
+    <style name="Theme.DCCNConnect" parent="Theme.Material3.DayNight.NoActionBar">
+        <!-- Primary brand color -->
+        <item name="colorPrimary">@color/primary_500</item>
+        <item name="colorPrimaryVariant">@color/primary_700</item>
+        <item name="colorOnPrimary">@color/white</item>
+        
+        <!-- Secondary brand color -->
+        <item name="colorSecondary">@color/secondary_500</item>
+        <item name="colorSecondaryVariant">@color/secondary_700</item>
+        <item name="colorOnSecondary">@color/white</item>
+        
+        <!-- Status colors -->
+        <item name="colorError">@color/error_500</item>
+        <item name="colorOnError">@color/white</item>
+        
+        <!-- Surface colors -->
+        <item name="colorSurface">@color/surface_900</item>
+        <item name="colorOnSurface">@color/white</item>
+        <item name="colorSurfaceVariant">@color/surface_800</item>
+        <item name="colorOnSurfaceVariant">@color/gray_300</item>
+        
+        <!-- Background colors -->
+        <item name="android:colorBackground">@color/background_900</item>
+        <item name="colorOnBackground">@color/white</item>
+        
+        <!-- Text colors -->
+        <item name="android:textColorPrimary">@color/white</item>
+        <item name="android:textColorSecondary">@color/gray_300</item>
+        <item name="android:textColorTertiary">@color/gray_400</item>
+        
+        <!-- Status bar and navigation bar -->
+        <item name="android:statusBarColor">@color/background_900</item>
+        <item name="android:navigationBarColor">@color/background_900</item>
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:windowLightNavigationBar">false</item>
+        
+        <!-- Card and component styles -->
+        <item name="cardBackgroundColor">@color/surface_800</item>
+        <item name="cardElevation">4dp</item>
+        <item name="cardCornerRadius">12dp</item>
+        
+        <!-- Input styles -->
+        <item name="textInputStyle">@style/Widget.DCCNConnect.TextInputLayout</item>
+        <item name="editTextStyle">@style/Widget.DCCNConnect.EditText</item>
+        
+        <!-- Button styles -->
+        <item name="materialButtonStyle">@style/Widget.DCCNConnect.Button</item>
+        <item name="materialButtonOutlinedStyle">@style/Widget.DCCNConnect.Button.Outlined</item>
+    </style>
+    
+    <!-- No Action Bar variant -->
+    <style name="Theme.DCCNConnect.NoActionBar">
+        <item name="windowActionBar">false</item>
+        <item name="windowNoTitle">true</item>
+    </style>
+    
+    <!-- Custom Text Input Layout Style -->
+    <style name="Widget.DCCNConnect.TextInputLayout" parent="Widget.Material3.TextInputLayout.OutlinedBox">
+        <item name="boxStrokeColor">@color/primary_500</item>
+        <item name="boxStrokeWidth">2dp</item>
+        <item name="hintTextColor">@color/primary_500</item>
+        <item name="android:textColorHint">@color/gray_400</item>
+    </style>
+    
+    <!-- Custom EditText Style -->
+    <style name="Widget.DCCNConnect.EditText" parent="Widget.AppCompat.EditText">
+        <item name="android:textColor">@color/white</item>
+        <item name="android:textColorHint">@color/gray_400</item>
+        <item name="android:background">@drawable/edit_text_background</item>
+        <item name="android:padding">16dp</item>
+        <item name="android:textSize">16sp</item>
+    </style>
+    
+    <!-- Custom Button Style -->
+    <style name="Widget.DCCNConnect.Button" parent="Widget.Material3.Button">
+        <item name="android:textColor">@color/white</item>
+        <item name="android:textSize">16sp</item>
+        <item name="android:textStyle">bold</item>
+        <item name="cornerRadius">12dp</item>
+        <item name="android:padding">16dp</item>
+        <item name="android:minHeight">56dp</item>
+    </style>
+    
+    <!-- Outlined Button Style -->
+    <style name="Widget.DCCNConnect.Button.Outlined" parent="Widget.Material3.Button.OutlinedButton">
+        <item name="android:textColor">@color/primary_500</item>
+        <item name="strokeColor">@color/primary_500</item>
+        <item name="strokeWidth">2dp</item>
+        <item name="cornerRadius">12dp</item>
+        <item name="android:padding">16dp</item>
+        <item name="android:minHeight">56dp</item>
+    </style>
+    
+    <!-- Emergency Button Style -->
+    <style name="Widget.DCCNConnect.Button.Emergency" parent="Widget.Material3.Button">
+        <item name="android:textColor">@color/white</item>
+        <item name="backgroundTint">@color/error_500</item>
+        <item name="cornerRadius">12dp</item>
+        <item name="android:padding">16dp</item>
+        <item name="android:minHeight">56dp</item>
+    </style>
+</resources>
+

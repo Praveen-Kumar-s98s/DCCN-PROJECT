@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Primary Colors -->
+    <color name="primary_50">#E3F2FD</color>
+    <color name="primary_100">#BBDEFB</color>
+    <color name="primary_200">#90CAF9</color>
+    <color name="primary_300">#64B5F6</color>
+    <color name="primary_400">#42A5F5</color>
+    <color name="primary_500">#2196F3</color>
+    <color name="primary_600">#1E88E5</color>
+    <color name="primary_700">#1976D2</color>
+    <color name="primary_800">#1565C0</color>
+    <color name="primary_900">#0D47A1</color>
+    
+    <!-- Secondary Colors -->
+    <color name="secondary_50">#F3E5F5</color>
+    <color name="secondary_100">#E1BEE7</color>
+    <color name="secondary_200">#CE93D8</color>
+    <color name="secondary_300">#BA68C8</color>
+    <color name="secondary_400">#AB47BC</color>
+    <color name="secondary_500">#9C27B0</color>
+    <color name="secondary_600">#8E24AA</color>
+    <color name="secondary_700">#7B1FA2</color>
+    <color name="secondary_800">#6A1B9A</color>
+    <color name="secondary_900">#4A148C</color>
+    
+    <!-- Status Colors -->
+    <color name="success_500">#4CAF50</color>
+    <color name="success_700">#388E3C</color>
+    <color name="warning_500">#FF9800</color>
+    <color name="warning_700">#F57C00</color>
+    <color name="error_500">#F44336</color>
+    <color name="error_700">#D32F2F</color>
+    <color name="info_500">#2196F3</color>
+    <color name="info_700">#1976D2</color>
+    
+    <!-- Dark Theme Colors -->
+    <color name="background_900">#0A0A0A</color>
+    <color name="background_800">#1A1A1A</color>
+    <color name="surface_900">#0A0A0A</color>
+    <color name="surface_800">#1A1A1A</color>
+    <color name="surface_700">#2A2A2A</color>
+    <color name="surface_600">#3A3A3A</color>
+    
+    <!-- Gray Colors -->
+    <color name="gray_100">#F5F5F5</color>
+    <color name="gray_200">#EEEEEE</color>
+    <color name="gray_300">#E0E0E0</color>
+    <color name="gray_400">#BDBDBD</color>
+    <color name="gray_500">#9E9E9E</color>
+    <color name="gray_600">#757575</color>
+    <color name="gray_700">#616161</color>
+    <color name="gray_800">#424242</color>
+    <color name="gray_900">#212121</color>
+    
+    <!-- Basic Colors -->
+    <color name="white">#FFFFFF</color>
+    <color name="black">#000000</color>
+    <color name="transparent">#00000000</color>
+    
+    <!-- Network Status Colors -->
+    <color name="network_connected">#4CAF50</color>
+    <color name="network_connecting">#FF9800</color>
+    <color name="network_disconnected">#F44336</color>
+    <color name="network_weak">#FF5722</color>
+    <color name="network_strong">#8BC34A</color>
+    
+    <!-- Message Colors -->
+    <color name="message_sent">#2196F3</color>
+    <color name="message_received">#4CAF50</color>
+    <color name="message_broadcast">#9C27B0</color>
+    <color name="message_emergency">#F44336</color>
+    <color name="message_system">#FF9800</color>
+</resources>
+
