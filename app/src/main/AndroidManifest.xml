@@ -50,11 +50,7 @@
             </intent-filter>
         </activity>
         
-        <!-- Login Activity -->
-        <activity
-            android:name=".activities.LoginActivity"
-            android:exported="false"
-            android:theme="@style/Theme.DCCNConnect.NoActionBar" />
+        
         
         <!-- Dashboard Activity -->
         <activity

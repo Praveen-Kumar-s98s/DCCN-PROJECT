@@ -16,6 +16,10 @@ import android.net.wifi.p2p.WifiP2pManager;
 import android.os.Binder;
 import android.os.IBinder;
 import android.util.Log;
+import android.os.Build;
+import android.content.pm.PackageManager;
+import androidx.core.content.ContextCompat;
+import android.Manifest;
 
 import androidx.annotation.Nullable;
 
@@ -179,12 +183,18 @@ public class CommunicationService extends Service {
             return;
         }
         
+        if (!hasServicePermissions()) {
+            Log.w(TAG, "Missing runtime permissions; aborting discovery");
+            return;
+        }
+
         isDiscoveryActive = true;
         Log.d(TAG, "Starting peer discovery");
         
         // Start Wi-Fi P2P discovery
         if (wifiP2pManager != null && channel != null) {
-            wifiP2pManager.discoverPeers(channel, new WifiP2pManager.ActionListener() {
+            try {
+                wifiP2pManager.discoverPeers(channel, new WifiP2pManager.ActionListener() {
                 @Override
                 public void onSuccess() {
                     Log.d(TAG, "Wi-Fi P2P discovery started");
@@ -194,13 +204,20 @@ public class CommunicationService extends Service {
                 public void onFailure(int reason) {
                     Log.e(TAG, "Wi-Fi P2P discovery failed: " + reason);
                 }
-            });
+                });
+            } catch (Exception e) {
+                Log.e(TAG, "discoverPeers threw", e);
+            }
         }
         
         // Start Bluetooth discovery
         if (bluetoothAdapter != null && bluetoothAdapter.isEnabled()) {
-            bluetoothAdapter.startDiscovery();
-            Log.d(TAG, "Bluetooth discovery started");
+            try {
+                bluetoothAdapter.startDiscovery();
+                Log.d(TAG, "Bluetooth discovery started");
+            } catch (SecurityException se) {
+                Log.e(TAG, "Bluetooth discovery security exception", se);
+            }
         }
     }
     
@@ -217,7 +234,8 @@ public class CommunicationService extends Service {
         
         // Stop Wi-Fi P2P discovery
         if (wifiP2pManager != null && channel != null) {
-            wifiP2pManager.stopPeerDiscovery(channel, new WifiP2pManager.ActionListener() {
+            try {
+                wifiP2pManager.stopPeerDiscovery(channel, new WifiP2pManager.ActionListener() {
                 @Override
                 public void onSuccess() {
                     Log.d(TAG, "Wi-Fi P2P discovery stopped");
@@ -227,14 +245,32 @@ public class CommunicationService extends Service {
                 public void onFailure(int reason) {
                     Log.e(TAG, "Wi-Fi P2P discovery stop failed: " + reason);
                 }
-            });
+                });
+            } catch (Exception e) {
+                Log.e(TAG, "stopPeerDiscovery threw", e);
+            }
         }
         
         // Stop Bluetooth discovery
         if (bluetoothAdapter != null && bluetoothAdapter.isDiscovering()) {
-            bluetoothAdapter.cancelDiscovery();
+            try {
+                bluetoothAdapter.cancelDiscovery();
+            } catch (SecurityException se) {
+                Log.e(TAG, "Bluetooth cancelDiscovery security exception", se);
+            }
             Log.d(TAG, "Bluetooth discovery stopped");
         }
+    }
+
+    private boolean hasServicePermissions() {
+        boolean fine = ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
+                == PackageManager.PERMISSION_GRANTED;
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) return fine;
+        boolean scan = ContextCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_SCAN)
+                == PackageManager.PERMISSION_GRANTED;
+        boolean connect = ContextCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_CONNECT)
+                == PackageManager.PERMISSION_GRANTED;
+        return fine && scan && connect;
     }
     
     /**

@@ -3,6 +3,7 @@ package com.dccn.connect.activities;
 import android.Manifest;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.os.Build;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
@@ -47,6 +48,7 @@ public class DashboardActivity extends AppCompatActivity {
 
     // Permission request codes
     private static final int PERMISSION_REQUEST_CODE = 100;
+    private static final int REQ_PERMS = 1001;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -79,8 +81,8 @@ public class DashboardActivity extends AppCompatActivity {
         // Update UI
         updateUI();
         
-        // Check and request permissions
-        checkPermissions();
+        // Check and request permissions (Android 12+ requires BT runtime permissions)
+        ensureRuntimePermissions();
     }
 
     /**
@@ -196,6 +198,11 @@ public class DashboardActivity extends AppCompatActivity {
      * Start network discovery
      */
     private void startDiscovery() {
+        // ensure permissions first
+        if (!hasDiscoveryPermissions()) {
+            ensureRuntimePermissions();
+            return;
+        }
         isDiscoveryActive = true;
         btnStartDiscovery.setText("Stop Discovery");
         btnStartDiscovery.setBackgroundColor(getResources().getColor(R.color.error_500));
@@ -263,35 +270,44 @@ public class DashboardActivity extends AppCompatActivity {
     /**
      * Check and request necessary permissions
      */
-    private void checkPermissions() {
-        String[] permissions = {
-            Manifest.permission.BLUETOOTH,
-            Manifest.permission.BLUETOOTH_ADMIN,
-            Manifest.permission.ACCESS_FINE_LOCATION,
-            Manifest.permission.ACCESS_WIFI_STATE,
-            Manifest.permission.CHANGE_WIFI_STATE
-        };
-
-        List<String> permissionsToRequest = new ArrayList<>();
-        for (String permission : permissions) {
-            if (ContextCompat.checkSelfPermission(this, permission) 
+    private void ensureRuntimePermissions() {
+        List<String> missing = new ArrayList<>();
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
                 != PackageManager.PERMISSION_GRANTED) {
-                permissionsToRequest.add(permission);
+            missing.add(Manifest.permission.ACCESS_FINE_LOCATION);
+        }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_SCAN)
+                    != PackageManager.PERMISSION_GRANTED) {
+                missing.add(Manifest.permission.BLUETOOTH_SCAN);
+            }
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_CONNECT)
+                    != PackageManager.PERMISSION_GRANTED) {
+                missing.add(Manifest.permission.BLUETOOTH_CONNECT);
             }
         }
-
-        if (!permissionsToRequest.isEmpty()) {
-            ActivityCompat.requestPermissions(this, 
-                permissionsToRequest.toArray(new String[0]), 
-                PERMISSION_REQUEST_CODE);
+        if (!missing.isEmpty()) {
+            ActivityCompat.requestPermissions(this, missing.toArray(new String[0]), REQ_PERMS);
         }
+    }
+
+    private boolean hasDiscoveryPermissions() {
+        boolean fine = ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
+                == PackageManager.PERMISSION_GRANTED;
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) {
+            return fine;
+        }
+        boolean scan = ContextCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_SCAN)
+                == PackageManager.PERMISSION_GRANTED;
+        boolean connect = ContextCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_CONNECT)
+                == PackageManager.PERMISSION_GRANTED;
+        return fine && scan && connect;
     }
 
     @Override
     public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        
-        if (requestCode == PERMISSION_REQUEST_CODE) {
+        if (requestCode == REQ_PERMS || requestCode == PERMISSION_REQUEST_CODE) {
             boolean allGranted = true;
             for (int result : grantResults) {
                 if (result != PackageManager.PERMISSION_GRANTED) {
@@ -299,11 +315,8 @@ public class DashboardActivity extends AppCompatActivity {
                     break;
                 }
             }
-            
-            if (allGranted) {
-                Toast.makeText(this, "All permissions granted", Toast.LENGTH_SHORT).show();
-            } else {
-                Toast.makeText(this, "Some permissions denied", Toast.LENGTH_SHORT).show();
+            if (!allGranted) {
+                Toast.makeText(this, "Permissions required for discovery", Toast.LENGTH_LONG).show();
             }
         }
     }
