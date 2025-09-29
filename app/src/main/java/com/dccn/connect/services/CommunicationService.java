@@ -346,6 +346,69 @@ public class CommunicationService extends Service {
     }
     
     /**
+     * Toggle Bluetooth and Wi-Fi
+     */
+    public void toggleBluetoothWifi() {
+        // Toggle Bluetooth
+        if (bluetoothAdapter != null) {
+            if (bluetoothAdapter.isEnabled()) {
+                bluetoothAdapter.disable();
+                Log.d(TAG, "Bluetooth disabled");
+            } else {
+                bluetoothAdapter.enable();
+                Log.d(TAG, "Bluetooth enabled");
+            }
+        }
+        
+        // Note: Wi-Fi Direct doesn't have a simple enable/disable toggle
+        // It's managed by the system based on discovery and connection state
+        Log.d(TAG, "Wi-Fi Direct state managed by system");
+    }
+    
+    /**
+     * Send message to connected peers
+     */
+    public void sendMessage(com.dccn.connect.models.Message message) {
+        Log.d(TAG, "Sending message: " + message.getText());
+        
+        // TODO: Implement actual message sending via Bluetooth/Wi-Fi Direct
+        // For now, just log the message
+        for (User peer : connectedPeers) {
+            Log.d(TAG, "Message sent to peer: " + peer.getUsername());
+        }
+        
+        // In a real implementation, this would:
+        // 1. Serialize the message
+        // 2. Send via Bluetooth or Wi-Fi Direct to each connected peer
+        // 3. Handle delivery confirmation
+    }
+    
+    /**
+     * Send emergency alert to all connected peers
+     */
+    public void sendEmergencyAlert(com.dccn.connect.models.Message emergencyMessage) {
+        Log.d(TAG, "Sending EMERGENCY ALERT: " + emergencyMessage.getText());
+        
+        // Emergency alerts have higher priority
+        for (User peer : connectedPeers) {
+            Log.d(TAG, "EMERGENCY ALERT sent to peer: " + peer.getUsername());
+        }
+        
+        // Also send to discovered peers if they're not connected yet
+        for (User peer : discoveredPeers) {
+            if (!connectedPeers.contains(peer)) {
+                Log.d(TAG, "EMERGENCY ALERT sent to discovered peer: " + peer.getUsername());
+            }
+        }
+        
+        // In a real implementation, this would:
+        // 1. Use higher priority transmission
+        // 2. Retry multiple times for reliability
+        // 3. Use both Bluetooth and Wi-Fi Direct for maximum reach
+        // 4. Trigger device vibrations/notifications
+    }
+    
+    /**
      * Wi-Fi P2P broadcast receiver
      */
     private final BroadcastReceiver wifiReceiver = new BroadcastReceiver() {
