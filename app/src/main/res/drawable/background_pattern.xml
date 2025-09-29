@@ -7,12 +7,6 @@
         </shape>
     </item>
     
-    <!-- Subtle pattern overlay -->
-    <item>
-        <bitmap
-            android:src="@drawable/pattern_dots"
-            android:tileMode="repeat"
-            android:alpha="0.03" />
-    </item>
+    <!-- Removed vector-based bitmap overlay to prevent inflate crash on some devices -->
 </layer-list>
 
