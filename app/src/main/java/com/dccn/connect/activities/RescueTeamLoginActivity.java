@@ -99,11 +99,9 @@ public class RescueTeamLoginActivity extends AppCompatActivity {
             // Show success message
             Toast.makeText(this, "Welcome, " + user.getUsername(), Toast.LENGTH_SHORT).show();
 
-            // Navigate to Dashboard
+            // Navigate to Dashboard (keep back stack so user can return if something fails)
             Intent intent = new Intent(RescueTeamLoginActivity.this, DashboardActivity.class);
-            intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
             startActivity(intent);
-            finish();
         } else {
             // Show error message
             Toast.makeText(this, "Invalid username or password", Toast.LENGTH_SHORT).show();
