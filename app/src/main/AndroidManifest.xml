@@ -49,9 +49,19 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        
-        
-        
+
+        <!-- Student Login Activity -->
+        <activity
+            android:name=".activities.StudentLoginActivity"
+            android:exported="false"
+            android:theme="@style/Theme.DCCNConnect.NoActionBar" />
+
+        <!-- Rescue Team Login Activity -->
+        <activity
+            android:name=".activities.RescueTeamLoginActivity"
+            android:exported="false"
+            android:theme="@style/Theme.DCCNConnect.NoActionBar" />
+
         <!-- Dashboard Activity -->
         <activity
             android:name=".activities.DashboardActivity"
