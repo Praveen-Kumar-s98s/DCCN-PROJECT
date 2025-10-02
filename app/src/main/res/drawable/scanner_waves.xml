@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    
+    <!-- Outer wave -->
+    <item android:top="10dp" android:left="10dp" android:right="10dp" android:bottom="10dp">
+        <shape android:shape="oval">
+            <stroke
+                android:width="3dp"
+                android:color="#40FFFFFF" />
+            <solid android:color="@android:color/transparent" />
+        </shape>
+    </item>
+    
+    <!-- Middle wave -->
+    <item android:top="20dp" android:left="20dp" android:right="20dp" android:bottom="20dp">
+        <shape android:shape="oval">
+            <stroke
+                android:width="2dp"
+                android:color="#60FFFFFF" />
+            <solid android:color="@android:color/transparent" />
+        </shape>
+    </item>
+    
+    <!-- Inner wave -->
+    <item android:top="30dp" android:left="30dp" android:right="30dp" android:bottom="30dp">
+        <shape android:shape="oval">
+            <stroke
+                android:width="2dp"
+                android:color="#80FFFFFF" />
+            <solid android:color="@android:color/transparent" />
+        </shape>
+    </item>
+    
+</layer-list>

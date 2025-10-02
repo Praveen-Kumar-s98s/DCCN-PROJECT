@@ -18,8 +18,13 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
+    <!-- Scanner Overlay -->
+    <include layout="@layout/scanner_overlay"
+        android:id="@+id/scanner_overlay"/>
+
     <!-- Main Content Container -->
     <androidx.core.widget.NestedScrollView
+        android:id="@+id/main_content"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:fillViewport="true"

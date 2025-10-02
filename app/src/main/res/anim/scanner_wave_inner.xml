@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<set xmlns:android="http://schemas.android.com/apk/res/android"
+    android:duration="3000"
+    android:fillAfter="false"
+    android:repeatCount="infinite"
+    android:repeatMode="restart"
+    android:startOffset="500">
+
+    <!-- Alpha fade -->
+    <alpha
+        android:duration="3000"
+        android:fromAlpha="0.8"
+        android:toAlpha="0.1" />
+
+</set>

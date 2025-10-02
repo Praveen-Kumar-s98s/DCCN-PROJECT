@@ -8,9 +8,13 @@ import android.content.ServiceConnection;
 import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
 import android.os.IBinder;
+import android.os.Looper;
+import android.animation.ObjectAnimator;
 import android.view.View;
 import android.widget.Button;
+import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -21,6 +25,7 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.dccn.connect.R;
+import com.dccn.connect.adapters.FoundDeviceAdapter;
 import com.dccn.connect.adapters.PeerAdapter;
 import com.dccn.connect.models.User;
 import com.dccn.connect.services.CommunicationService;
@@ -34,7 +39,6 @@ import java.util.List;
  */
 public class DashboardActivity extends AppCompatActivity {
 
-    private TextView tvUsername;
     private TextView tvNetworkStatus;
     private TextView tvPeerCount;
     private Button btnStartDiscovery;
@@ -44,9 +48,19 @@ public class DashboardActivity extends AppCompatActivity {
     private Button btnLogout;
     private RecyclerView rvConnectedPeers;
     
+    // Scanner overlay components
+    private View scannerOverlay;
+    private ImageView scannerWaves;
+    private ImageView scannerCircleInner;
+    private TextView tvScanningStatus;
+    private TextView tvScanningProgress;
+    private RecyclerView rvFoundDevices;
+    private Button btnStopScan;
+    
     private PreferenceManager preferenceManager;
     private User currentUser;
     private PeerAdapter peerAdapter;
+    private FoundDeviceAdapter foundDeviceAdapter;
     private List<User> connectedPeers;
     private List<User> discoveredPeers;
     private boolean isDiscoveryActive = false;
@@ -66,34 +80,18 @@ public class DashboardActivity extends AppCompatActivity {
             isServiceBound = true;
             
             // Set up listeners
-            communicationService.setOnPeerDiscoveryListener(new CommunicationService.OnPeerDiscoveryListener() {
-                @Override
-                public void onPeerDiscovered(User peer) {
-                    runOnUiThread(() -> {
-                        addDiscoveredPeer(peer);
-                    });
-                }
-                
-                @Override
-                public void onPeerLost(User peer) {
-                    runOnUiThread(() -> {
-                        removeDiscoveredPeer(peer);
-                    });
-                }
-            });
-            
             communicationService.setOnConnectionStatusListener(new CommunicationService.OnConnectionStatusListener() {
                 @Override
-                public void onPeerConnected(User peer) {
+                public void onConnectionStatusChanged(boolean isConnected) {
                     runOnUiThread(() -> {
-                        addConnectedPeer(peer);
+                        updateNetworkStatus();
                     });
                 }
                 
                 @Override
-                public void onPeerDisconnected(User peer) {
+                public void onPeerCountChanged(int peerCount) {
                     runOnUiThread(() -> {
-                        removeConnectedPeer(peer);
+                        updatePeerCount();
                     });
                 }
             });
@@ -145,7 +143,9 @@ public class DashboardActivity extends AppCompatActivity {
      * Initialize all view references
      */
     private void initViews() {
-        tvUsername = findViewById(R.id.tv_username);
+        TextView tvUsername = findViewById(R.id.tv_username);
+        tvUsername.setText("Welcome, " + currentUser.getUsername());
+        
         tvNetworkStatus = findViewById(R.id.tv_network_status);
         tvPeerCount = findViewById(R.id.tv_peer_count);
         btnStartDiscovery = findViewById(R.id.btn_start_discovery);
@@ -154,6 +154,15 @@ public class DashboardActivity extends AppCompatActivity {
         btnEnableBluetoothWifi = findViewById(R.id.btn_enable_bluetooth_wifi);
         btnLogout = findViewById(R.id.btn_logout);
         rvConnectedPeers = findViewById(R.id.rv_connected_peers);
+        
+        // Initialize scanner overlay components
+        scannerOverlay = findViewById(R.id.scanner_overlay);
+        scannerWaves = scannerOverlay.findViewById(R.id.scanner_waves);
+        scannerCircleInner = scannerOverlay.findViewById(R.id.scanner_circle);
+        tvScanningStatus = scannerOverlay.findViewById(R.id.tv_scanning_status);
+        tvScanningProgress = scannerOverlay.findViewById(R.id.tv_scanning_progress);
+        rvFoundDevices = scannerOverlay.findViewById(R.id.rv_found_devices);
+        btnStopScan = scannerOverlay.findViewById(R.id.btn_stop_scan);
     }
 
     /**
@@ -167,6 +176,11 @@ public class DashboardActivity extends AppCompatActivity {
         rvConnectedPeers.setLayoutManager(new LinearLayoutManager(this));
         rvConnectedPeers.setAdapter(peerAdapter);
         
+        // Set up found devices RecyclerView
+        foundDeviceAdapter = new FoundDeviceAdapter();
+        rvFoundDevices.setLayoutManager(new LinearLayoutManager(this));
+        rvFoundDevices.setAdapter(foundDeviceAdapter);
+        
         // Set up peer click listener
         peerAdapter.setOnPeerClickListener(new PeerAdapter.OnPeerClickListener() {
             @Override
@@ -176,6 +190,15 @@ public class DashboardActivity extends AppCompatActivity {
                     // TODO: Implement peer connection
                     Toast.makeText(DashboardActivity.this, "Connecting to " + peer.getUsername(), Toast.LENGTH_SHORT).show();
                 }
+            }
+        });
+        
+        // Set up found device click listener
+        foundDeviceAdapter.setOnDeviceClickListener(new FoundDeviceAdapter.OnDeviceClickListener() {
+            @Override
+            public void onDeviceClick(FoundDeviceAdapter.DiscoveredDevice device) {
+                Toast.makeText(DashboardActivity.this, "Connecting to " + device.getName(), Toast.LENGTH_SHORT).show();
+                // TODO: Implement device connection
             }
         });
     }
@@ -218,16 +241,20 @@ public class DashboardActivity extends AppCompatActivity {
                 logout();
             }
         });
+        
+        // Scanner overlay click listener
+        btnStopScan.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                stopDiscovery();
+            }
+        });
     }
 
     /**
      * Update UI with current user and network information
      */
     private void updateUI() {
-        if (currentUser != null) {
-            tvUsername.setText("Welcome, " + currentUser.getUsername());
-        }
-        
         // Update network status (simulated for now)
         updateNetworkStatus();
         
@@ -318,13 +345,23 @@ public class DashboardActivity extends AppCompatActivity {
             return;
         }
         isDiscoveryActive = true;
-        btnStartDiscovery.setText("Stop Discovery");
-        btnStartDiscovery.setBackgroundColor(getResources().getColor(R.color.error_500));
+        
+        // Show scanner overlay and start animations
+        showScannerOverlay();
+        startScannerAnimations();
         
         // Start and bind to communication service
         Intent serviceIntent = new Intent(this, CommunicationService.class);
         startService(serviceIntent);
         bindService(serviceIntent, serviceConnection, Context.BIND_AUTO_CREATE);
+        
+        // Simulate device discovery after some delay
+        new Handler(Looper.getMainLooper()).postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                simulateDeviceDiscovery();
+            }
+        }, 3000);
         
         Toast.makeText(this, "Network discovery started", Toast.LENGTH_SHORT).show();
     }
@@ -334,8 +371,10 @@ public class DashboardActivity extends AppCompatActivity {
      */
     private void stopDiscovery() {
         isDiscoveryActive = false;
-        btnStartDiscovery.setText("Start Discovery");
-        btnStartDiscovery.setBackgroundColor(getResources().getColor(R.color.primary_500));
+        
+        // Hide scanner overlay and stop animations
+        hideScannerOverlay();
+        stopScannerAnimations();
         
         // Stop discovery in service
         if (communicationService != null) {
@@ -352,6 +391,7 @@ public class DashboardActivity extends AppCompatActivity {
         
         // Clear discovered peers
         discoveredPeers.clear();
+        foundDeviceAdapter.clearDevices();
         updatePeerCount();
         
         Toast.makeText(this, "Network discovery stopped", Toast.LENGTH_SHORT).show();
@@ -462,6 +502,74 @@ public class DashboardActivity extends AppCompatActivity {
             unbindService(serviceConnection);
             isServiceBound = false;
         }
+    }
+    
+    /**
+     * Show scanner overlay with animations
+     */
+    private void showScannerOverlay() {
+        scannerOverlay.setVisibility(View.VISIBLE);
+        tvScanningStatus.setText("Scanning for devices...");
+        tvScanningProgress.setText("Searching...");
+        foundDeviceAdapter.clearDevices();
+    }
+    
+    /**
+     * Hide scanner overlay
+     */
+    private void hideScannerOverlay() {
+        scannerOverlay.setVisibility(View.GONE);
+    }
+    
+    /**
+     * Start scanner wave animations
+     */
+    private void startScannerAnimations() {
+        if (scannerWaves != null) {
+            ObjectAnimator scaleAnim = ObjectAnimator.ofFloat(scannerWaves, "scaleX", 0.5f, 1.8f);
+            ObjectAnimator scaleAnimY = ObjectAnimator.ofFloat(scannerWaves, "scaleY", 0.5f, 1.8f);
+            ObjectAnimator alphaAnim = ObjectAnimator.ofFloat(scannerWaves, "alpha", 1.0f, 0.0f);
+            
+            scaleAnim.setDuration(2000);
+            scaleAnimY.setDuration(2000);
+            alphaAnim.setDuration(2000);
+            
+            scaleAnim.setRepeatCount(ObjectAnimator.INFINITE);
+            scaleAnimY.setRepeatCount(ObjectAnimator.INFINITE);
+            alphaAnim.setRepeatCount(ObjectAnimator.INFINITE);
+            
+            scaleAnim.start();
+            scaleAnimY.start();
+            alphaAnim.start();
+        }
+    }
+    
+    /**
+     * Stop scanner wave animations
+     */
+    private void stopScannerAnimations() {
+        if (scannerWaves != null) {
+            scannerWaves.clearAnimation();
+            scannerWaves.setScaleX(1.0f);
+            scannerWaves.setScaleY(1.0f);
+            scannerWaves.setAlpha(1.0f);
+        }
+    }
+    
+    /**
+     * Simulate device discovery for demo purposes
+     */
+    private void simulateDeviceDiscovery() {
+        // Add some mock devices for demonstration
+        FoundDeviceAdapter.DiscoveredDevice device1 = 
+            new FoundDeviceAdapter.DiscoveredDevice("Samsung Galaxy A12", "AA:BB:CC:DD:EE:FF", "Bluetooth");
+        FoundDeviceAdapter.DiscoveredDevice device2 = 
+            new FoundDeviceAdapter.DiscoveredDevice("iPhone 14", "11:22:33:44:55:66", "WiFi Direct");
+        
+        foundDeviceAdapter.addDevice(device1);
+        foundDeviceAdapter.addDevice(device2);
+        
+        tvScanningProgress.setText("Found " + foundDeviceAdapter.getItemCount() + " devices");
     }
 }
 

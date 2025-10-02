@@ -2,6 +2,8 @@
 *.apk
 *.ap_
 *.aab
+# Allow APKs in releases folder
+!releases/*.apk
 
 # Files for the ART/Dalvik VM
 *.dex

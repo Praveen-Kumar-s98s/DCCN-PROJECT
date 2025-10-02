@@ -22,7 +22,10 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
         debug {
-            signingConfig null
+            minifyEnabled false
+            debuggable true
+            // v1SigningEnabled false
+            // v2SigningEnabled false
         }
     }
     
