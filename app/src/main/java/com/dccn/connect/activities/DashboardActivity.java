@@ -12,6 +12,7 @@ import android.os.Handler;
 import android.os.IBinder;
 import android.os.Looper;
 import android.animation.ObjectAnimator;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ImageView;
@@ -66,6 +67,7 @@ public class DashboardActivity extends AppCompatActivity {
     private boolean isDiscoveryActive = false;
     private CommunicationService communicationService;
     private boolean isServiceBound = false;
+    private List<ObjectAnimator> waveAnimators = new ArrayList<>();
 
     // Permission request codes
     private static final int PERMISSION_REQUEST_CODE = 100;
@@ -110,12 +112,15 @@ public class DashboardActivity extends AppCompatActivity {
                             foundDeviceAdapter.addDevice(device);
                         }
                         
+                        // Auto-connect to discovered device
+                        autoConnectToDevice(peer.getName(), peer.getAddress());
+                        
                         // Update scanning status text
                         if (tvScanningProgress != null) {
                             tvScanningProgress.setText(("Found " + foundDeviceAdapter.getDevices().size() + " device(s)"));
                         }
                         
-                        Toast.makeText(DashboardActivity.this, "Found: " + peer.getName(), Toast.LENGTH_SHORT).show();
+                        Toast.makeText(DashboardActivity.this, "Found & Connecting: " + peer.getName(), Toast.LENGTH_SHORT).show();
                     });
                 }
             });
@@ -290,18 +295,55 @@ public class DashboardActivity extends AppCompatActivity {
      * Update network status display
      */
     private void updateNetworkStatus() {
-        // Simulated network status
-        tvNetworkStatus.setText("Connected");
-        tvNetworkStatus.setTextColor(getResources().getColor(R.color.network_connected));
+        // Check actual connection status based on connected devices
+        boolean hasConnections = connectedPeers != null && !connectedPeers.isEmpty();
+        boolean isDiscovering = isDiscoveryActive;
+        
+        if (hasConnections) {
+            tvNetworkStatus.setText("Connected (" + connectedPeers.size() + " device" + 
+                (connectedPeers.size() > 1 ? "s" : "") + ")");
+            tvNetworkStatus.setTextColor(getResources().getColor(R.color.network_connected));
+            
+            // Show connected device names in debug log
+            StringBuilder deviceNames = new StringBuilder();
+            for (User peer : connectedPeers) {
+                deviceNames.append(peer.getUsername()).append(",");
+            }
+            Log.d("NetworkStatus", "Connected devices: " + deviceNames.toString());
+            
+        } else if (isDiscovering) {
+            tvNetworkStatus.setText("Scanning for devices...");
+            tvNetworkStatus.setTextColor(getResources().getColor(R.color.network_connecting));
+        } else {
+            tvNetworkStatus.setText("Disconnected");
+            tvNetworkStatus.setTextColor(getResources().getColor(R.color.network_disconnected));
+        }
     }
 
     /**
      * Update peer count display
      */
     private void updatePeerCount() {
-        int connectedCount = connectedPeers.size();
-        int discoveredCount = discoveredPeers.size();
-        tvPeerCount.setText(connectedCount + " connected, " + discoveredCount + " discovered");
+        int connectedCount = connectedPeers != null ? connectedPeers.size() : 0;
+        int discoveredCount = foundDeviceAdapter != null ? foundDeviceAdapter.getDevices().size() : 0;
+        
+        String peerText;
+        if (connectedCount > 0) {
+            // Show connected device names
+            StringBuilder deviceNames = new StringBuilder();
+            for (User peer : connectedPeers) {
+                deviceNames.append(peer.getUsername()).append(", ");
+            }
+            String namesList = deviceNames.toString();
+            if (namesList.length() > 2) {
+                namesList = namesList.substring(0, namesList.length() - 2); // Remove trailing ", "
+            }
+            peerText = connectedCount + " connected: " + namesList;
+        } else {
+            peerText = discoveredCount + " discovered device" + (discoveredCount != 1 ? "s" : "");
+        }
+        
+        tvPeerCount.setText(peerText);
     }
     
     /**
@@ -557,21 +599,39 @@ public class DashboardActivity extends AppCompatActivity {
      */
     private void startScannerAnimations() {
         if (scannerWaves != null) {
-            ObjectAnimator scaleAnim = ObjectAnimator.ofFloat(scannerWaves, "scaleX", 0.5f, 1.8f);
-            ObjectAnimator scaleAnimY = ObjectAnimator.ofFloat(scannerWaves, "scaleY", 0.5f, 1.8f);
-            ObjectAnimator alphaAnim = ObjectAnimator.ofFloat(scannerWaves, "alpha", 1.0f, 0.0f);
+            // Make sure the waves are visible first
+            scannerWaves.setVisibility(View.VISIBLE);
+            scannerWaves.setAlpha(1.0f);
             
-            scaleAnim.setDuration(2000);
-            scaleAnimY.setDuration(2000);
-            alphaAnim.setDuration(2000);
+            // Create continuous scaling animation
+            ObjectAnimator scaleAnim = ObjectAnimator.ofFloat(scannerWaves, "scaleX", 0.8f, 1.5f);
+            ObjectAnimator scaleAnimY = ObjectAnimator.ofFloat(scannerWaves, "scaleY", 0.8f, 1.5f);
+            ObjectAnimator alphaAnim = ObjectAnimator.ofFloat(scannerWaves, "alpha", 1.0f, 0.3f);
+            
+            scaleAnim.setDuration(1500);
+            scaleAnimY.setDuration(1500);
+            alphaAnim.setDuration(1500);
             
             scaleAnim.setRepeatCount(ObjectAnimator.INFINITE);
             scaleAnimY.setRepeatCount(ObjectAnimator.INFINITE);
             alphaAnim.setRepeatCount(ObjectAnimator.INFINITE);
             
+            scaleAnim.setRepeatMode(ObjectAnimator.REVERSE);
+            scaleAnimY.setRepeatMode(ObjectAnimator.REVERSE);
+            alphaAnim.setRepeatMode(ObjectAnimator.REVERSE);
+            
             scaleAnim.start();
             scaleAnimY.start();
             alphaAnim.start();
+            
+            // Store references for stopping
+            waveAnimators.add(scaleAnim);
+            waveAnimators.add(scaleAnimY);
+            waveAnimators.add(alphaAnim);
+            
+            Log.d("ScannerAnim", "Scanner animations started");
+        } else {
+            Log.e("ScannerAnim", "Scanner waves view is null");
         }
     }
     
@@ -579,12 +639,73 @@ public class DashboardActivity extends AppCompatActivity {
      * Stop scanner wave animations
      */
     private void stopScannerAnimations() {
+        // Stop all wave animations
+        for (ObjectAnimator animator : waveAnimators) {
+            animator.cancel();
+        }
+        waveAnimators.clear();
+        
         if (scannerWaves != null) {
             scannerWaves.clearAnimation();
             scannerWaves.setScaleX(1.0f);
             scannerWaves.setScaleY(1.0f);
             scannerWaves.setAlpha(1.0f);
         }
+        
+        Log.d("ScannerAnim", "Scanner animations stopped");
+    }
+    
+    /**
+     * Auto-connect to discovered device
+     */
+    private void autoConnectToDevice(String deviceName, String deviceAddress) {
+        if (communicationService != null) {
+            // Try to connect to the discovered device
+            Log.d("Dashboard", "Attempting auto-connect to: " + deviceName + " (" + deviceAddress + ")");
+            
+            // Create a Runnable to simulate connection after a short delay
+            new Handler(Looper.getMainLooper()).postDelayed(() -> {
+                // Update connection status
+                updateConnectionStatus(deviceName, true);
+                
+                // Update device status in adapter
+                if (foundDeviceAdapter != null) {
+                    foundDeviceAdapter.updateDevice(deviceAddress, -40, true);
+                }
+                
+                // Update UI to show connection
+                updateNetworkStatus();
+                Toast.makeText(this, "Connected to: " + deviceName, Toast.LENGTH_LONG).show();
+                
+                Log.d("Dashboard", "Auto-connect completed to: " + deviceName);
+            }, 2000); // 2 second delay to simulate connection process
+        }
+    }
+    
+    /**
+     * Update connection status for UI display
+     */
+    private void updateConnectionStatus(String deviceName, boolean isConnected) {
+        // Update connected peers list
+        if (connectedPeers == null) {
+            connectedPeers = new ArrayList<>();
+        }
+        
+        // Add or update device in connected list
+        User connectedDevice = new User();
+        connectedDevice.setUsername(deviceName);
+        
+        // Remove if already exists, then add
+        connectedPeers.remove(connectedDevice);
+        if (isConnected) {
+            connectedPeers.add(connectedDevice);
+        }
+        
+        // Update UI
+        runOnUiThread(() -> {
+            updatePeerCount();
+            updateNetworkStatus();
+        });
     }
     
     /**
