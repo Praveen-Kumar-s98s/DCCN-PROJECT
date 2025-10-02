@@ -37,6 +37,7 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.DCCNConnect"
+        android:debuggable="true"
         tools:targetApi="31">
         
         <!-- Main Activity - Entry Point -->
