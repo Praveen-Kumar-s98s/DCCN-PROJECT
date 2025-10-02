@@ -94,6 +94,30 @@ public class DashboardActivity extends AppCompatActivity {
                         updatePeerCount();
                     });
                 }
+                
+                @Override
+                public void onPeerDiscovered(CommunicationService.DiscoveredPeer peer) {
+                    runOnUiThread(() -> {
+                        // Convert DiscoveredPeer to FoundDeviceAdapter.DiscoveredDevice
+                        FoundDeviceAdapter.DiscoveredDevice device = new FoundDeviceAdapter.DiscoveredDevice(
+                                peer.getName(), 
+                                peer.getAddress(), 
+                                "Bluetooth"  // For now, hardcode Bluetooth since DiscoveredPeer doesn't have connectionType
+                        );
+                        
+                        // Add discovered device to the adapter
+                        if (foundDeviceAdapter != null) {
+                            foundDeviceAdapter.addDevice(device);
+                        }
+                        
+                        // Update scanning status text
+                        if (tvScanningProgress != null) {
+                            tvScanningProgress.setText(("Found " + foundDeviceAdapter.getDevices().size() + " device(s)"));
+                        }
+                        
+                        Toast.makeText(DashboardActivity.this, "Found: " + peer.getName(), Toast.LENGTH_SHORT).show();
+                    });
+                }
             });
         }
         
@@ -346,6 +370,11 @@ public class DashboardActivity extends AppCompatActivity {
         }
         isDiscoveryActive = true;
         
+        // Clear previous discoveries
+        if (foundDeviceAdapter != null) {
+            foundDeviceAdapter.clearDevices();
+        }
+        
         // Show scanner overlay and start animations
         showScannerOverlay();
         startScannerAnimations();
@@ -355,13 +384,10 @@ public class DashboardActivity extends AppCompatActivity {
         startService(serviceIntent);
         bindService(serviceIntent, serviceConnection, Context.BIND_AUTO_CREATE);
         
-        // Simulate device discovery after some delay
-        new Handler(Looper.getMainLooper()).postDelayed(new Runnable() {
-            @Override
-            public void run() {
-                simulateDeviceDiscovery();
-            }
-        }, 3000);
+        // Start real device discovery
+        if (communicationService != null) {
+            communicationService.startPeerDiscovery();
+        }
         
         Toast.makeText(this, "Network discovery started", Toast.LENGTH_SHORT).show();
     }
@@ -378,7 +404,12 @@ public class DashboardActivity extends AppCompatActivity {
         
         // Stop discovery in service
         if (communicationService != null) {
-            communicationService.stopDiscovery();
+            communicationService.stopPeerDiscovery();
+        }
+        
+        // Clear discovered devices list
+        if (foundDeviceAdapter != null) {
+            foundDeviceAdapter.clearDevices();
         }
         
         // Unbind and stop communication service

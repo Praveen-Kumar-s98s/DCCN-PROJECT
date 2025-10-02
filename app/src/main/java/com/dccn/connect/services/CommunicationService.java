@@ -1,6 +1,8 @@
 package com.dccn.connect.services;
 
 import android.app.Service;
+import android.bluetooth.BluetoothAdapter;
+import android.bluetooth.BluetoothDevice;
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
@@ -30,6 +32,7 @@ public class CommunicationService extends Service {
     private WifiP2pManager wifiP2pManager;
     private WifiP2pManager.Channel channel;
     private BroadcastReceiver wifiReceiver;
+    private BroadcastReceiver bluetoothReceiver;
     private IntentFilter intentFilter;
 
     private final IBinder binder = new LocalBinder();
@@ -82,40 +85,100 @@ public class CommunicationService extends Service {
         if (wifiReceiver != null) {
             unregisterReceiver(wifiReceiver);
         }
+        if (bluetoothReceiver != null) {
+            unregisterReceiver(bluetoothReceiver);
+        }
         super.onDestroy();
     }
 
     // Start peer discovery
     public void startPeerDiscovery() {
+        // Start WiFi P2P discovery
         if (wifiP2pManager != null && channel != null) {
             wifiP2pManager.discoverPeers(channel, new WifiP2pManager.ActionListener() {
                 @Override
                 public void onSuccess() {
-                    Log.d(TAG, "Peer discovery started successfully");
+                    Log.d(TAG, "WiFi P2P peer discovery started successfully");
+                    startBluetoothDiscovery();
                 }
 
                 @Override
                 public void onFailure(int reasonCode) {
-                    Log.e(TAG, "Failed to start peer discovery: " + reasonCode);
+                    Log.e(TAG, "Failed to start WiFi P2P peer discovery: " + reasonCode);
+                    startBluetoothDiscovery(); // Try Bluetooth anyway
                 }
             });
+        } else {
+            startBluetoothDiscovery();
+        }
+    }
+
+    // Start Bluetooth device discovery
+    private void startBluetoothDiscovery() {
+        BluetoothAdapter bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
+        if (bluetoothAdapter != null && bluetoothAdapter.isEnabled()) {
+            if (!bluetoothAdapter.isDiscovering()) {
+                Log.d(TAG, "Starting Bluetooth discovery...");
+                bluetoothAdapter.startDiscovery();
+                
+                // Register receiver for discovered devices
+                IntentFilter filter = new IntentFilter(BluetoothDevice.ACTION_FOUND);
+                registerReceiver(bluetoothReceiver = new BroadcastReceiver() {
+                    @Override
+                    public void onReceive(Context context, Intent intent) {
+                        String action = intent.getAction();
+                        if (BluetoothDevice.ACTION_FOUND.equals(action)) {
+                            BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
+                            if (device != null && device.getName() != null) {
+                                Log.d(TAG, "Found Bluetooth device: " + device.getName() + " (" + device.getAddress() + ")");
+                                
+                                // Notify discovered device
+                                if (onConnectionStatusListener != null) {
+                                    DiscoveredPeer peer = new DiscoveredPeer(device.getName(), device.getAddress());
+                                    onConnectionStatusListener.onPeerDiscovered(peer);
+                                }
+                            }
+                        }
+                    }
+                }, filter);
+            }
+        } else {
+            Log.w(TAG, "Bluetooth adapter not available or disabled");
         }
     }
 
     // Stop peer discovery
     public void stopPeerDiscovery() {
+        // Stop WiFi P2P discovery
         if (wifiP2pManager != null && channel != null) {
             wifiP2pManager.stopPeerDiscovery(channel, new WifiP2pManager.ActionListener() {
                 @Override
                 public void onSuccess() {
-                    Log.d(TAG, "Peer discovery stopped successfully");
+                    Log.d(TAG, "WiFi P2P peer discovery stopped successfully");
                 }
 
                 @Override
                 public void onFailure(int reasonCode) {
-                    Log.e(TAG, "Failed to stop peer discovery: " + reasonCode);
+                    Log.e(TAG, "Failed to stop WiFi P2P peer discovery: " + reasonCode);
                 }
             });
+        }
+        
+        // Stop Bluetooth discovery
+        stopBluetoothDiscovery();
+    }
+
+    // Stop Bluetooth device discovery
+    private void stopBluetoothDiscovery() {
+        BluetoothAdapter bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
+        if (bluetoothAdapter != null && bluetoothAdapter.isDiscovering()) {
+            bluetoothAdapter.cancelDiscovery();
+            Log.d(TAG, "Bluetooth discovery stopped");
+        }
+        
+        if (bluetoothReceiver != null) {
+            unregisterReceiver(bluetoothReceiver);
+            bluetoothReceiver = null;
         }
     }
 
@@ -148,6 +211,7 @@ public class CommunicationService extends Service {
     public interface OnConnectionStatusListener {
         void onConnectionStatusChanged(boolean isConnected);
         void onPeerCountChanged(int peerCount);
+        void onPeerDiscovered(DiscoveredPeer peer);
     }
 
     private OnConnectionStatusListener onConnectionStatusListener;

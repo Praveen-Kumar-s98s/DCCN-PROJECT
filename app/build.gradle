@@ -2,7 +2,7 @@ plugins {
     id 'com.android.application'
 }
 
-android {
+    android {
     namespace 'com.dccn.connect'
     compileSdk 33
 
@@ -10,8 +10,8 @@ android {
         applicationId "com.dccn.connect"
         minSdk 26
         targetSdk 33
-        versionCode 1
-        versionName "1.0"
+        versionCode 2
+        versionName "1.0.8"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -24,8 +24,7 @@ android {
         debug {
             minifyEnabled false
             debuggable true
-            // v1SigningEnabled false
-            // v2SigningEnabled false
+            signingConfig signingConfigs.debug
         }
     }
     
